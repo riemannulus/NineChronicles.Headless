@@ -218,6 +218,7 @@ namespace Libplanet.Headless.Hosting
                         BucketSize = Properties.BucketSize,
                         PollInterval = Properties.PollInterval,
                         MaximumPollPeers = Properties.MaximumPollPeers,
+                        StaticPeers = Properties.ConsensusPeers,
                         Type = transportType,
                     }
                 );
@@ -464,6 +465,12 @@ namespace Libplanet.Headless.Hosting
             var miner = new Miner<T>(BlockChain, Swarm, Properties.MinerPrivateKey);
             while (!cts.IsCancellationRequested)
             {
+                if (!Swarm.IsOwnProposeTurn())
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(3), cts);
+                    continue;
+                }
+
                 // Collected votes for the previous block.
                 VoteSet voteSet = Swarm.VoteSetOf(BlockChain.Tip.Index);
                 Block<T> block;
