@@ -209,6 +209,7 @@ namespace Libplanet.Headless.Hosting
                         BucketSize = Properties.BucketSize,
                         MaximumPollPeers = Properties.MaximumPollPeers,
                         Type = transportType,
+                        ConsensusPeers = Properties.ConsensusPeers,
                         TimeoutOptions = new TimeoutOptions
                         {
                             MaxTimeout = TimeSpan.FromSeconds(50),
