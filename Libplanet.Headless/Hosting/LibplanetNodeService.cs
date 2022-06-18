@@ -197,7 +197,7 @@ namespace Libplanet.Headless.Hosting
                     consensusPrivateKey: properties.ConsensusPrivateKey,
                     consensusTableBucket: 1000,
                     consensusTableSize: 1,
-                    consensusWorkers: 100,
+                    consensusWorkers: 1000,
                     consensusPort: properties.ConsensusPort,
                     nodeId: Properties.NodeId,
                     validators: Properties.Validators,
