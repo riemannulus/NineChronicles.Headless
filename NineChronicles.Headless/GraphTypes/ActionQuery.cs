@@ -546,7 +546,7 @@ namespace NineChronicles.Headless.GraphTypes
                         Name = "operatorType",
                         Description = "Type of operator for validator set."
                     },
-                    new QueryArgument<NonNullGraphType<PublicKeyType>>
+                    new QueryArgument<NonNullGraphType<Libplanet.Explorer.GraphTypes.PublicKeyType>>
                     {
                         Name = "publicKey",
                         Description = "The public key for operand validator."

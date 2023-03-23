@@ -3,14 +3,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using Bencodex;
 using Bencodex.Types;
 using Cocona;
 using CsvHelper;
+using Google.Protobuf.WellKnownTypes;
 using Libplanet;
-using Libplanet.Action;
 using Libplanet.Assets;
 using Libplanet.Blocks;
+using Libplanet.Consensus;
 using Libplanet.Crypto;
 using Libplanet.Tx;
 using Nekoyume.Action;
@@ -319,6 +321,63 @@ namespace NineChronicles.Headless.Executable.Commands
                 rng.NextBytes(nonce);
                 var (ak, _) = ActivationKey.Create(key, nonce);
                 _console.Out.WriteLine($"{ak.Encode()},{ByteUtil.Hex(nonce)}");
+            }
+        }
+        
+        [Command(Description = "Create ActvationKey-nonce pairs and dump them as csv")]
+        public void CreateValidatorSetAppendTx()
+        {
+            var validatorCandidates = new[]
+            {
+                "0260972c353ba9b1e630d7b488ef0e9250a86286fbc8541e1bcca82f1a50cf8012",
+                "029a46496641787a06db32d83dfea3b50ebb681fae9bbf4e60b41ee91d4024965b",
+                "021ebc027706c9b7fdb03bc212657241197c4f7d4f122cbb66f347bee3bfd39551",
+                "03310066ad080de4bea6042163cade4ab777a1ccb45abfada0973352b34ca0b497",
+            };
+            var startNonce = 350;
+            PublicKey signer = new PublicKey(
+                ByteUtil.ParseHex("0326e7f518eadfb1addc320755eeb78e385cf4b9d56986677a092a708c86990ae1"));
+            BlockHash genesisHash = BlockHash.FromString("4582250d0da33b06779a8475d283d5dd210c683b9b999d74d03fac4f58fa6bce");
+            DateTimeOffset txTimestamp = new DateTime(2023, 4, 1);
+            
+            var createUnsignedTxFunc = new Func<ValidatorSetOperate, int, Transaction<NCAction>>((operate, i) =>
+                Transaction<NCAction>.CreateUnsigned(
+                    startNonce + i,
+                    signer,
+                    genesisHash,
+                    new List<NCAction>
+                    {
+                        new(operate)
+                    },
+                    timestamp: txTimestamp));
+
+            var validatorSetOperateTxs = validatorCandidates
+                .Select(candidateString =>
+                    new Validator(new PublicKey(ByteUtil.ParseHex(candidateString)), BigInteger.One))
+                .Select(ValidatorSetOperate.Append)
+                .Select(createUnsignedTxFunc);
+            foreach (var transaction in validatorSetOperateTxs)
+            {
+                _console.Out.WriteLine(ByteUtil.Hex(transaction.Serialize(false)));
+            }
+        }
+
+        [Command(Description = "Create ActvationKey-nonce pairs and dump them as csv")]
+        public void Validate()
+        {
+            var txString = "64313a616c6475373a747970655f69647531363a6f705f76616c696461746f725f73657475363a76616c7565736475323a6f7075363a417070656e6475373a6f706572616e6464313a5033333a03310066ad080de4bea6042163cade4ab777a1ccb45abfada0973352b34ca0b497313a7069316565656565313a6733323a4582250d0da33b06779a8475d283d5dd210c683b9b999d74d03fac4f58fa6bce313a6e6933353365313a7036353a0426e7f518eadfb1addc320755eeb78e385cf4b9d56986677a092a708c86990ae18937bb6413076cbcb641e6460c3fd52b67262b08957e65790624412300ffbb73313a7332303aa1ef9701f151244f9aa7131639990c4664d2aeef313a747532373a323032332d30332d33315431353a30303a30302e3030303030305a313a756c6565";
+            byte[] txHex = ByteUtil.ParseHex(txString);
+            Transaction<NCAction> tx = Transaction<NCAction>.Deserialize(txHex, validate: false);
+            if (tx.CustomActions == null)
+            {
+                return;
+            }
+            foreach (var customAction in tx.CustomActions)
+            {
+                if(customAction.InnerAction is ValidatorSetOperate validatorSetOperate)
+                {
+                    _console.Out.WriteLine(tx.Signer);
+                }
             }
         }
     }
