@@ -273,6 +273,16 @@ namespace NineChronicles.Headless.Executable
                             return (range, actionEvaluatorConfiguration);
                         }).ToImmutableArray()
                     },
+                    ActionEvaluatorType.StateServiceActionEvaluator => new StateServiceActionEvaluatorConfiguration()
+                    {
+                        StateServices = configuration.GetSection("StateServices").GetChildren().Select(service =>
+                        {
+                            var stateServiceConfiguration = new StateServiceConfiguration();
+                            service.Bind(stateServiceConfiguration);
+                            return stateServiceConfiguration;
+                        }).ToArray(),
+                        StateServiceDownloadPath = configuration.GetValue<string>("StateServiceDownloadPath"),
+                    },
                     _ => throw new InvalidOperationException("Unexpected type."),
                 };
             }

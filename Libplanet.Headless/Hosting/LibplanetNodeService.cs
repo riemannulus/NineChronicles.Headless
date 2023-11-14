@@ -16,6 +16,7 @@ using Libplanet.Types.Blocks;
 using Libplanet.Crypto;
 using Libplanet.Extensions.ForkableActionEvaluator;
 using Libplanet.Extensions.RemoteActionEvaluator;
+using Libplanet.Extensions.StateServiceActionEvaluator;
 using Libplanet.Net;
 using Libplanet.Net.Consensus;
 using Libplanet.Net.Options;
@@ -133,6 +134,15 @@ namespace Libplanet.Headless.Hosting
                                 (pair.Item1.Start, pair.Item1.End), BuildActionEvaluator(pair.Item2)
                             )), actionLoader
                         ),
+                    StateServiceActionEvaluatorConfiguration configuration => 
+                        new StateServiceActionEvaluator(
+                            configuration.StateServices
+                                .Select(service => 
+                                    new StateServiceWithMetadata(
+                                        new StateService(service.Path, service.Port, service.StateStorePath),
+                                        new EvaluateRange(service.Range.Start, service.Range.End),
+                                        configuration.StateServiceDownloadPath)),
+                            configuration.StateServiceDownloadPath),
                     _ => throw new InvalidOperationException("Unexpected type."),
                 };
             }
